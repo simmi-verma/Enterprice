@@ -3,7 +3,7 @@
 //--- send successful response
 
 const success=(res, data={}, message="Success", statusCode=200)=>{
-    res.status(statusCode).json({success: true, message, data, timestamp:new Date().toTSOString()});
+    res.status(statusCode).json({success: true, message, data, timestamp:new Date().toISOString()});
 }
 
 //--used when response is successful created
@@ -14,7 +14,8 @@ const created=(res, data={}, message="Created Successfully")=> success(res, data
 const error=(res, message="Internal server error" , statusCode=500, error=null)=>{
     res.status(statusCode).json({
         success:false,
-        ...(errors && {errors}),
+        message,
+        ...(error && {error}),
         timestamp:new Date().toISOString(),
     })
 }

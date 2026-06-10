@@ -1,4 +1,5 @@
 const mongoose=require("mongoose");
+const bcrypt=require("bcryptjs");
 
 const userSchema=new mongoose.Schema({
     orgId:{
@@ -55,11 +56,10 @@ userSchema.index({ email: 1, orgId: 1 }, { unique: true });
 userSchema.index({ orgId: 1, role: 1 });
 userSchema.index({ orgId: 1, isActive: 1 });
 
-userSchema.pre("save", async function(next){
-    if(!this.isModified("password")) return next();
+userSchema.pre("save", async function(){
+    if(!this.isModified("password")) return;
     const salt=await bcrypt.genSalt(12);
     this.password=await bcrypt.hash(this.password, salt);
-    next();
 })
 
 userSchema.methods.comparePassword = async function (candidate) {
