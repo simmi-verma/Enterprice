@@ -1,7 +1,6 @@
 version: "3.8"
 
 services:
-
   # API Gateway
   api-gateway:
     image: nginx:alpine
@@ -51,29 +50,58 @@ services:
       - ed-network
     restart: unless-stopped
 
-  #Employee Service
+  # Employee Service
   employee-service:
-    build: { context: ./employee-service, dockerfile: Dockerfile }
+    build:
+      context: .
+      dockerfile: ./employee-service/Dockerfile
     container_name: ed-employee
-      command: npm run dev
+    command: npm run dev
     environment:
-      - NODE_ENV=development
-      - PORT=3002
-      - SERVICE_NAME=employee-service
-      - MONGO_URI=mongodb://mongo-employee:27017/enterprisedesk_employees
-      - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
-      - JWT_SECRET=enterprisedesk_jwt_secret_change_in_prod_32ch
+      NODE_ENV: development
+      PORT: 3002
+      SERVICE_NAME: employee-service
+      MONGO_URI: mongodb://mongo-employee:27017/enterprisedesk_employees
+      RABBITMQ_URL: amqp://admin:password@rabbitmq:5672
+      JWT_SECRET: enterprisedesk_jwt_secret_change_in_prod_32ch
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./employee-service:/app/employee-service
+      - /app/employee-service/node_modules
+      - ./shared:/app/shared
+      - /app/shared/utils/node_modules
     depends_on:
-      mongo-employee: { condition: service_healthy }
-    networks: [ed-network]
+      mongo-employee:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - ed-network
     restart: unless-stopped
 
-  # MongoDB
+  # MongoDB for Org Service
   mongo-org:
     image: mongo:6
     container_name: ed-mongo-org
     volumes:
       - mongo_org_data:/data/db
+    networks:
+      - ed-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # MongoDB for Employee Service
+  mongo-employee:
+    image: mongo:6
+    container_name: ed-mongo-employee
+    volumes:
+      - mongo_employee_data:/data/db
     networks:
       - ed-network
     restart: unless-stopped
@@ -133,9 +161,11 @@ volumes:
   mongo_org_data:
     name: ed_mongo_org
 
+  mongo_employee_data:
+    name: ed_mongo_employee
+
   redis_data:
     name: ed_redis
 
   rabbitmq_data:
     name: ed_rabbitmq
-    

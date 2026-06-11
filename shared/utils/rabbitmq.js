@@ -10,7 +10,7 @@ const connect = async (retries = 5, delay = 3000) => {
       connection = await amqp.connect(process.env.RABBITMQ_URL || "amqp://admin:password@localhost:5672");
       channel = await connection.createChannel();
       await channel.assertExchange("enterprise.events", "topic", { durable: true });
-      logger.info("✅ RabbitMQ connected");
+      logger.info("RabbitMQ connected");
 
       connection.on("error", () => reconnect());
       connection.on("close", () => reconnect());
